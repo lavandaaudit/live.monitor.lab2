@@ -78,13 +78,13 @@
     <!-- GOES SUVI LIVE ANIMATIONS (4 СПЕКТРА) -->
     <div class="row">
       <div class="block" id="suvi-171-container">
-        <img src="https://services.swpc.noaa.gov/images/swx-overview-small.gif" class="suvi-poster" alt="SUVI 171">
+        <img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0171.jpg?t=init" class="suvi-poster" alt="SUVI 171">
         <canvas class="suvi-canvas" style="display:none;"></canvas>
         <div class="suvi-ui"><div class="suvi-btn play-btn">▶</div><div class="suvi-status"></div></div>
         <div class="fallback-text">GOES SUVI 171 (48h)</div>
       </div>
       <div class="block" id="suvi-195-container">
-        <img src="https://services.swpc.noaa.gov/images/swx-overview-small.gif" class="suvi-poster" alt="SUVI 195">
+        <img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0193.jpg?t=init" class="suvi-poster" alt="SUVI 195">
         <canvas class="suvi-canvas" style="display:none;"></canvas>
         <div class="suvi-ui"><div class="suvi-btn play-btn">▶</div><div class="suvi-status"></div></div>
         <div class="fallback-text">GOES SUVI 195 (48h)</div>
@@ -93,13 +93,13 @@
 
     <div class="row">
       <div class="block" id="suvi-284-container">
-        <img src="https://services.swpc.noaa.gov/images/swx-overview-small.gif" class="suvi-poster" alt="SUVI 284">
+        <img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0211.jpg?t=init" class="suvi-poster" alt="SUVI 284">
         <canvas class="suvi-canvas" style="display:none;"></canvas>
         <div class="suvi-ui"><div class="suvi-btn play-btn">▶</div><div class="suvi-status"></div></div>
         <div class="fallback-text">GOES SUVI 284 (48h)</div>
       </div>
       <div class="block" id="suvi-304-container">
-        <img src="https://services.swpc.noaa.gov/images/swx-overview-small.gif" class="suvi-poster" alt="SUVI 304">
+        <img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0304.jpg?t=init" class="suvi-poster" alt="SUVI 304">
         <canvas class="suvi-canvas" style="display:none;"></canvas>
         <div class="suvi-ui"><div class="suvi-btn play-btn">▶</div><div class="suvi-status"></div></div>
         <div class="fallback-text">GOES SUVI 304 (48h)</div>
@@ -177,7 +177,7 @@ suviChannels.forEach(channel => {
   let currentIndex = 0;
   let animationId;
   let lastDrawTime = 0;
-  let recorder, chunks = [];
+  let dlBtn; // Кнопка завантаження
   const frameInterval = 80; // 80ms => ~12 FPS
 
   function playLoop(timestamp) {
@@ -188,12 +188,6 @@ suviChannels.forEach(channel => {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       }
       currentIndex = (currentIndex + 1) % images.length;
-      
-      // Stop recording after 1 full cycle
-      if (currentIndex === 0 && recorder && recorder.state === 'recording') {
-        recorder.stop();
-        recorder = null;
-      }
       
       lastDrawTime = timestamp;
     }
@@ -255,26 +249,57 @@ suviChannels.forEach(channel => {
             canvas.width = 800; canvas.height = 800;
           }
           
-          if (canvas.captureStream) {
-            try {
-              const stream = canvas.captureStream(12);
-              recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-              recorder.ondataavailable = e => chunks.push(e.data);
-              recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                const videoUrl = URL.createObjectURL(blob);
-                const dlBtn = document.createElement('a');
-                dlBtn.innerHTML = '📥';
-                dlBtn.href = videoUrl;
-                dlBtn.download = `GOES19_SUVI_${channel}_48h.webm`;
-                dlBtn.className = 'suvi-download-btn';
-                dlBtn.title = 'Зберегти відео';
-                dlBtn.addEventListener('click', e => e.stopPropagation());
-                container.appendChild(dlBtn);
-              };
-              recorder.start();
-            } catch(e) { console.warn("MediaRecorder not supported", e); }
-          }
+          // Створюємо кнопку ЗАВАНТАЖИТИ (вона з'явиться після буферизації)
+          dlBtn = document.createElement('div');
+          dlBtn.innerHTML = '📥 Скачати';
+          dlBtn.className = 'suvi-download-btn';
+          dlBtn.title = 'Скачати відео (WebM)';
+          container.appendChild(dlBtn);
+          
+          dlBtn.addEventListener('click', (e) => {
+             e.stopPropagation();
+             if (dlBtn.innerText === '⏳ Запис...') return;
+             
+             dlBtn.innerText = '⏳ Запис...';
+             
+             // Змушуємо плеєр грати для запису якщо був на паузі
+             if (!isPlaying) {
+               isPlaying = true;
+               animationId = requestAnimationFrame(playLoop);
+             }
+             
+             try {
+               const stream = canvas.captureStream(Math.floor(1000/frameInterval));
+               const rec = new MediaRecorder(stream, { mimeType: 'video/webm' });
+               const ch = [];
+               rec.ondataavailable = ev => { if(ev.data.size > 0) ch.push(ev.data); };
+               rec.onstop = () => {
+                 const blob = new Blob(ch, { type: 'video/webm' });
+                 const url = URL.createObjectURL(blob);
+                 const a = document.createElement('a');
+                 a.href = url;
+                 a.download = `GOES19_SUVI_${channel}_48h.webm`;
+                 a.click();
+                 URL.revokeObjectURL(url);
+                 dlBtn.innerHTML = '📥 Скачати';
+               };
+               rec.start();
+               
+               // Відраховуємо рівно 1 цикл кадрів і зупиняємо запис
+               let frameCount = 0;
+               const recInterval = setInterval(() => {
+                 frameCount++;
+                 if (frameCount >= images.length) {
+                   clearInterval(recInterval);
+                   if (rec.state !== 'inactive') rec.stop();
+                 }
+               }, frameInterval);
+             } catch(err) {
+               console.warn(err);
+               dlBtn.innerHTML = '❌ Помилка';
+               setTimeout(() => dlBtn.innerHTML = '📥 Скачати', 3000);
+             }
+          });
           
           animationId = requestAnimationFrame(playLoop);
         };
