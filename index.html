@@ -22,7 +22,15 @@
     .block img, .block video { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px; }
     .red-gif img, .red-gif video { filter: hue-rotate(0deg) saturate(1.6) brightness(1.1); }
     .blue-gif img, .blue-gif video { filter: hue-rotate(200deg) saturate(1.6) brightness(1.1); }
-    .fallback-text { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: #888; font-size: 11px; text-align: center; padding: 6px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2; }
+    .fallback-text { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: #888; font-size: 11px; text-align: center; padding: 6px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 4; }
+    .suvi-ui { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 3; background: rgba(0,0,0,0.4); transition: background 0.3s; }
+    .block:hover .suvi-ui { background: rgba(0,0,0,0.2); }
+    .suvi-btn { cursor: pointer; font-size: 40px; color: rgba(255,255,255,0.8); text-shadow: 0 0 10px #000; padding: 20px; transition: all 0.2s; user-select: none; }
+    .suvi-btn:hover { color: #fff; transform: scale(1.1); text-shadow: 0 0 15px #ffcc00; }
+    .suvi-status { position: absolute; top: 10px; left: 10px; font-size: 12px; color: #ffcc00; text-shadow: 0 0 5px #000; z-index: 4; font-weight: bold; }
+    .suvi-poster, .suvi-canvas { width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; inset: 0; }
+    .block .suvi-canvas { z-index: 1; }
+    .block .suvi-poster { z-index: 0; }
     .block:hover .fallback-text { opacity: 1; }
     .footer { text-align: center; padding: 8px 0; font-size: clamp(10px, 2vw, 12px); opacity: 0.8; letter-spacing: 0.05em; margin-top: 20px; }
     @media (max-width: 768px) { .row { grid-template-columns: 1fr; } }
@@ -71,19 +79,31 @@
     <!-- GOES SUVI LIVE ANIMATIONS (4 СПЕКТРА) -->
     <div class="row">
       <div class="block" id="suvi-171-container">
-        <div class="fallback-text">GOES SUVI 171 (live)</div>
+        <img src="https://services.swpc.noaa.gov/images/swx-overview-small.gif" class="suvi-poster" alt="SUVI 171">
+        <canvas class="suvi-canvas" style="display:none;"></canvas>
+        <div class="suvi-ui"><div class="suvi-btn play-btn">▶</div><div class="suvi-status"></div></div>
+        <div class="fallback-text">GOES SUVI 171 (48h)</div>
       </div>
       <div class="block" id="suvi-195-container">
-        <div class="fallback-text">GOES SUVI 195 (live)</div>
+        <img src="https://services.swpc.noaa.gov/images/swx-overview-small.gif" class="suvi-poster" alt="SUVI 195">
+        <canvas class="suvi-canvas" style="display:none;"></canvas>
+        <div class="suvi-ui"><div class="suvi-btn play-btn">▶</div><div class="suvi-status"></div></div>
+        <div class="fallback-text">GOES SUVI 195 (48h)</div>
       </div>
     </div>
 
     <div class="row">
       <div class="block" id="suvi-284-container">
-        <div class="fallback-text">GOES SUVI 284 (live)</div>
+        <img src="https://services.swpc.noaa.gov/images/swx-overview-small.gif" class="suvi-poster" alt="SUVI 284">
+        <canvas class="suvi-canvas" style="display:none;"></canvas>
+        <div class="suvi-ui"><div class="suvi-btn play-btn">▶</div><div class="suvi-status"></div></div>
+        <div class="fallback-text">GOES SUVI 284 (48h)</div>
       </div>
       <div class="block" id="suvi-304-container">
-        <div class="fallback-text">GOES SUVI 304 (live)</div>
+        <img src="https://services.swpc.noaa.gov/images/swx-overview-small.gif" class="suvi-poster" alt="SUVI 304">
+        <canvas class="suvi-canvas" style="display:none;"></canvas>
+        <div class="suvi-ui"><div class="suvi-btn play-btn">▶</div><div class="suvi-status"></div></div>
+        <div class="fallback-text">GOES SUVI 304 (48h)</div>
       </div>
     </div>
 
@@ -138,76 +158,121 @@ setInterval(() => {
   });
 }, 300000);
 
-// GOES SUVI ANIMATIONS LOADER WITH BUFFER
+// GOES SUVI INTERACTIVE ANIMATION PLAYERS
 const suviChannels = ['171', '195', '284', '304'];
-const maxFrames = 60; // Завантажуємо останні 60 кадрів для плавності
+
 suviChannels.forEach(channel => {
-  fetch(`https://services.swpc.noaa.gov/products/animations/suvi-primary-${channel}.json`)
-    .then(res => res.json())
-    .then(data => {
-      if (!data || !data.length) return;
-      
-      const frames = data.slice(-maxFrames);
-      const container = document.getElementById(`suvi-${channel}-container`);
-      
-      const canvas = document.createElement('canvas');
-      canvas.width = 800;
-      canvas.height = 800;
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-      canvas.style.objectFit = 'cover';
-      canvas.style.display = 'block';
-      container.insertBefore(canvas, container.firstChild);
-      
-      const ctx = canvas.getContext('2d', { alpha: false });
-      const images = [];
-      let loadedCount = 0;
-      let currentIndex = 0;
-      let isPlaying = false;
-      
-      // Відображення завантаження (буферизації)
-      ctx.fillStyle = "#111";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#ffcc00";
-      ctx.font = "40px 'Cinzel', serif";
-      ctx.textAlign = "center";
-      ctx.fillText("BUFFERING...", canvas.width/2, canvas.height/2);
+  const container = document.getElementById(`suvi-${channel}-container`);
+  const poster = container.querySelector('.suvi-poster');
+  const canvas = container.querySelector('.suvi-canvas');
+  const btn = container.querySelector('.play-btn');
+  const status = container.querySelector('.suvi-status');
+  const ui = container.querySelector('.suvi-ui');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  
+  let frames = [];
+  let images = [];
+  let isPlaying = false;
+  let isLoaded = false;
+  let isLoading = false;
+  let currentIndex = 0;
+  let animationId;
+  let lastDrawTime = 0;
+  const frameInterval = 80; // 80ms => ~12 FPS
 
-      frames.forEach((frame, idx) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          loadedCount++;
-          // Запуск після завантаження 30% буфера
-          if (!isPlaying && loadedCount > frames.length * 0.3) {
-            isPlaying = true;
-            if (images[0] && images[0].naturalWidth) {
-              canvas.width = images[0].naturalWidth;
-              canvas.height = images[0].naturalHeight;
-            }
-            requestAnimationFrame(playLoop);
-          }
-        };
-        img.src = `https://services.swpc.noaa.gov${frame.url}`;
-        images[idx] = img;
-      });
-      
-      let lastDrawTime = 0;
-      const frameInterval = 80; // 80ms на кадр (≈ 12 FPS)
-
-      function playLoop(timestamp) {
-        if (timestamp - lastDrawTime >= frameInterval) {
-          const img = images[currentIndex];
-          if (img && img.complete && img.naturalWidth > 0) {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          }
-          currentIndex = (currentIndex + 1) % frames.length;
-          lastDrawTime = timestamp;
-        }
-        requestAnimationFrame(playLoop);
+  function playLoop(timestamp) {
+    if (!isPlaying) return;
+    if (timestamp - lastDrawTime >= frameInterval) {
+      const img = images[currentIndex];
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       }
-    })
-    .catch(err => console.error(`Error loading SUVI ${channel}:`, err));
+      currentIndex = (currentIndex + 1) % images.length;
+      lastDrawTime = timestamp;
+    }
+    animationId = requestAnimationFrame(playLoop);
+  }
+
+  // Натискання на всю панель або кнопку діє як плей/стоп
+  ui.addEventListener('click', () => {
+    // Якщо йде завантаження (loading) — ігноруємо кліки, щоб не глючило
+    if (isLoading) return;
+
+    // Якщо завантажено та грає -> Стоп/Пауза
+    if (isPlaying) {
+      isPlaying = false;
+      btn.innerHTML = '▶'; // Відновити Play-іконку
+      ui.style.background = 'rgba(0,0,0,0.4)';
+      cancelAnimationFrame(animationId);
+      return;
+    }
+
+    // Якщо завантажено, але на паузі -> Плей
+    if (isLoaded && !isPlaying) {
+      isPlaying = true;
+      btn.innerHTML = '❚❚'; // Іконка Pause
+      ui.style.background = 'transparent'; // Приховуємо затемнення під час відтворення
+      animationId = requestAnimationFrame(playLoop);
+      return;
+    }
+
+    // Якщо не завантажено -> Завантажити 48h JSON
+    isLoading = true;
+    status.innerText = "Loading...";
+    btn.style.display = 'none'; // Ховаємо плей на час завантаження
+
+    fetch(`https://services.swpc.noaa.gov/products/animations/suvi-primary-${channel}.json`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.length) { status.innerText = "Error"; isLoading = false; btn.style.display = 'block'; return; }
+        
+        frames = data; // Завантажуємо ВСІ доступні кадри (зазвичай 48 годин)
+        let loadedCount = 0;
+        images = new Array(frames.length); // Зберігаємо порядок масиву
+
+        const finishLoading = () => {
+          isLoading = false;
+          isLoaded = true;
+          isPlaying = true;
+          status.innerText = "LIVE (48h)";
+          btn.style.display = 'block';
+          btn.innerHTML = '❚❚';
+          ui.style.background = 'transparent';
+          poster.style.display = 'none';
+          canvas.style.display = 'block';
+          
+          if (images[0] && images[0].naturalWidth) {
+            canvas.width = images[0].naturalWidth;
+            canvas.height = images[0].naturalHeight;
+          } else {
+            canvas.width = 800; canvas.height = 800;
+          }
+          animationId = requestAnimationFrame(playLoop);
+        };
+
+        frames.forEach((frame, idx) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            loadedCount++;
+            status.innerText = `Buf: ${Math.round((loadedCount/frames.length)*100)}%`;
+            // Запуск одразу як завантажиться 30% буфера, решта докачується в тлі
+            if (isLoading && loadedCount > frames.length * 0.3) {
+              finishLoading();
+            }
+          };
+          img.onerror = () => { loadedCount++; };
+          img.src = `https://services.swpc.noaa.gov${frame.url}`;
+          images[idx] = img;
+        });
+      })
+      .catch(err => {
+        console.error(`Error loading SUVI ${channel}:`, err);
+        status.innerText = "Failed";
+        isLoading = false;
+        btn.style.display = 'block';
+      });
+  });
 });
 </script>
 </body>
