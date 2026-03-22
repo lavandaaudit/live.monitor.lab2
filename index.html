@@ -1,159 +1,110 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="referrer" content="no-referrer">
-<meta name="robots" content="noindex,nofollow">
-<title>Ibonarium Cosmo Dynamics LAB LIVE</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-html, body {
-    width: 100%;
-    height: 100%;
-    background: #000;
-    color: #cfefff;
-    font-family: 'Cinzel', serif;
-    overflow: auto;
-}
-canvas {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-}
-.wrapper {
-    position: relative;
-    z-index: 1;
-    max-width: 1200px; /* контент не займає весь екран */
-    margin: 40px auto; /* чорні відступи зверху/знизу */
-    padding: 20px;
-    background: #000; /* чорний фон для відступів */
-    border-radius: 12px;
-}
-.header {
-    text-align: center;
-    padding: 8px 4px;
-}
-.main-title {
-    font-size: clamp(14px, 3vw, 20px); /* менший заголовок */
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    text-shadow: 0 0 10px #ffcc00;
-    color: #ffffff;
-    transition: all 0.3s ease;
-}
-.main-title:hover {
-    text-shadow: 0 0 25px #ffcc00;
-    transform: scale(1.02);
-}
-.content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-}
-.block {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    border-radius: 12px;
-    position: relative;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-.block:hover { transform: scale(1.01); }
-.block img, .block video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    border-radius: 10px;
-}
-.red-gif img { filter: hue-rotate(0deg) saturate(1.6) brightness(1.1); }
-.blue-gif img { filter: hue-rotate(200deg) saturate(1.6) brightness(1.1); }
-.footer {
-    text-align: center;
-    padding: 6px 0;
-    font-size: clamp(10px, 2vw, 12px);
-    opacity: 0.8;
-    letter-spacing: 0.05em;
-    margin-top: 10px;
-}
-@media (max-width: 768px) {
-    .row { grid-template-columns: 1fr; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Ibonarium Cosmo Dynamics LAB LIVE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; background: #000; color: #cfefff; font-family: 'Cinzel', serif; overflow-y: auto; }
+    canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 40px auto; padding: 20px; background: #000; border-radius: 12px; }
+    .header { text-align: center; padding: 8px 4px; }
+    .main-title { font-size: clamp(14px, 3vw, 20px); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; text-shadow: 0 0 10px #ffcc00; color: #fff; transition: all 0.3s ease; }
+    .main-title:hover { text-shadow: 0 0 25px #ffcc00; transform: scale(1.02); }
+    .content { display: flex; flex-direction: column; gap: 16px; }
+    .row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .block { width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 12px; position: relative; cursor: pointer; transition: transform 0.3s ease; background: #111; }
+    .block:hover { transform: scale(1.01); }
+    .block img, .block video { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px; }
+    .red-gif img, .red-gif video { filter: hue-rotate(0deg) saturate(1.6) brightness(1.1); }
+    .blue-gif img, .blue-gif video { filter: hue-rotate(200deg) saturate(1.6) brightness(1.1); }
+    .fallback-text { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: #888; font-size: 11px; text-align: center; padding: 6px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2; }
+    .block:hover .fallback-text { opacity: 1; }
+    .footer { text-align: center; padding: 8px 0; font-size: clamp(10px, 2vw, 12px); opacity: 0.8; letter-spacing: 0.05em; margin-top: 20px; }
+    @media (max-width: 768px) { .row { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
 <canvas id="stars"></canvas>
+
 <div class="wrapper">
-    <div class="header">
-        <div class="main-title" onclick="window.open('https://t.me/ibonariumcosmodynamicslablive', '_blank')">
-            Ibonarium Cosmo Dynamics LAB LIVE
-        </div>
+  <div class="header">
+    <div class="main-title" onclick="window.open('https://t.me/ibonariumcosmodynamicslablive', '_blank')">Ibonarium Cosmo Dynamics LAB LIVE</div>
+  </div>
+
+  <div class="content">
+    <!-- СТАТИЧНІ ОНОВЛЮВАНІ ДАНІ (РЯД 1-4) -->
+    <div class="row">
+      <div class="block red-gif">
+        <video autoplay loop muted playsinline>
+          <source src="https://soho.nascom.nasa.gov/data/LATEST/current_c2small.mp4" type="video/mp4">
+        </video>
+        <div class="fallback-text">LASCO C2</div>
+      </div>
+      <div class="block"><img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0171.jpg?t=init" alt="AIA 171" loading="lazy"></div>
     </div>
-    <div class="content">
-
-        <!-- Зображення -->
-        <div class="row">
-            <div class="block red-gif">
-                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c2.gif" alt="LASCO C2" loading="lazy">
-            </div>
-            <div class="block">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg" alt="AIA 171" loading="lazy">
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="block blue-gif">
-                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c3.gif" alt="LASCO C3" loading="lazy">
-            </div>
-            <div class="block">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg" alt="AIA 193" loading="lazy">
-            </div>
-        </div>
-
-        <!-- Відео-анімації -->
-        <div class="row">
-            <div class="block">
-                <video controls autoplay loop muted>
-                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0171_synoptic.mp4" type="video/mp4">
-                </video>
-            </div>
-            <div class="block">
-                <video controls autoplay loop muted>
-                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0193_synoptic.mp4" type="video/mp4">
-                </video>
-            </div>
-        </div>
-        <div class="row">
-            <div class="block">
-                <video controls autoplay loop muted>
-                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0211_synoptic.mp4" type="video/mp4">
-                </video>
-            </div>
-            <div class="block">
-                <video controls autoplay loop muted>
-                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0304_synoptic.mp4" type="video/mp4">
-                </video>
-            </div>
-        </div>
-
+    
+    <div class="row">
+      <div class="block blue-gif">
+        <video autoplay loop muted playsinline>
+          <source src="https://soho.nascom.nasa.gov/data/LATEST/current_c3small.mp4" type="video/mp4">
+        </video>
+        <div class="fallback-text">LASCO C3</div>
+      </div>
+      <div class="block"><img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0193.jpg?t=init" alt="AIA 193" loading="lazy"></div>
     </div>
-    <div class="footer">
-        sun.sun.sun/live/cosmodynamics.lab.live
+    
+    <div class="row">
+      <div class="block"><img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0304.jpg?t=init" alt="AIA 304" loading="lazy"></div>
+      <div class="block"><img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0211.jpg?t=init" alt="AIA 211" loading="lazy"></div>
     </div>
+    
+    <div class="row">
+      <div class="block"><img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0131.jpg?t=init" alt="AIA 131" loading="lazy"></div>
+      <div class="block"><img src="https://sdowww.lmsal.com/sdomedia/SunInTime/mostrecent/l0094.jpg?t=init" alt="AIA 094" loading="lazy"></div>
+    </div>
+
+    <!-- GOES SUVI LIVE ANIMATIONS (4 СПЕКТРА) -->
+    <div class="row">
+      <div class="block" id="suvi-171-container">
+        <div class="fallback-text">GOES SUVI 171 (live)</div>
+      </div>
+      <div class="block" id="suvi-195-container">
+        <div class="fallback-text">GOES SUVI 195 (live)</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="block" id="suvi-284-container">
+        <div class="fallback-text">GOES SUVI 284 (live)</div>
+      </div>
+      <div class="block" id="suvi-304-container">
+        <div class="fallback-text">GOES SUVI 304 (live)</div>
+      </div>
+    </div>
+
+    <!-- SOHO HMI МАГНІТНІ ТА ВИДИМІ ДАНІ (ПОЛЕГШЕНІ -512.mp4) -->
+    <div class="row">
+      <div class="block">
+        <video autoplay loop muted playsinline oncanplay="this.playbackRate = 0.1;">
+          <source src="https://soho.nascom.nasa.gov/data/LATEST/current_hmi_igr-512.mp4" type="video/mp4">
+        </video>
+        <div class="fallback-text">Фотосфера (48h | Швидкість x0.1)</div>
+      </div>
+      <div class="block">
+        <video autoplay loop muted playsinline oncanplay="this.playbackRate = 0.1;">
+          <source src="https://soho.nascom.nasa.gov/data/LATEST/current_hmi_mag-512.mp4" type="video/mp4">
+        </video>
+        <div class="fallback-text">Магнітограма (48h | Швидкість x0.1)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">sun.sun.sun / live / cosmodynamics.lab.live</div>
 </div>
 
 <script>
@@ -161,33 +112,54 @@ canvas {
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
 let W, H, stars = [];
-function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-    stars = Array.from({length: 180}, () => ({
-        x: Math.random()*W, y: Math.random()*H, z: Math.random()*W
-    }));
-}
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; stars = Array.from({length: 180}, () => ({ x: Math.random()*W, y: Math.random()*H, z: Math.random()*W })); }
 resize();
 window.addEventListener("resize", resize);
 function render() {
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0,0,W,H);
-    ctx.fillStyle = "#4dd2ff";
-    stars.forEach(s => {
-        s.z -= 0.25;
-        if (s.z <= 0) s.z = W;
-        const k = 128 / s.z;
-        const x = (s.x - W/2) * k + W/2;
-        const y = (s.y - H/2) * k + H/2;
-        if (x>0 && x<W && y>0 && y<H) {
-            const size = (1 - s.z/W)*3;
-            ctx.fillRect(x,y,size,size);
-        }
-    });
-    requestAnimationFrame(render);
+  ctx.fillStyle = "#000"; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = "#4dd2ff";
+  stars.forEach(s => {
+    s.z -= 0.25; if (s.z <= 0) s.z = W;
+    const k = 128 / s.z;
+    const x = (s.x - W/2) * k + W/2;
+    const y = (s.y - H/2) * k + H/2;
+    if (x>0 && x<W && y>0 && y<H) { const size = (1 - s.z/W)*3; ctx.fillRect(x,y,size,size); }
+  });
+  requestAnimationFrame(render);
 }
 render();
+
+// Автооновлення спрацює ТІЛЬКИ для статичних зображень LMSAL (маркер "?t=")
+setInterval(() => {
+  const t = Date.now();
+  document.querySelectorAll('img[src*="?t="]').forEach(el => {
+    const base = el.src.split('?t=')[0];
+    el.src = base + '?t=' + t;
+  });
+}, 300000);
+
+// GOES SUVI ANIMATIONS LOADER
+const suviChannels = ['171', '195', '284', '304'];
+suviChannels.forEach(channel => {
+  fetch(`https://services.swpc.noaa.gov/products/animations/suvi-primary-${channel}.json`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data || !data.length) return;
+      let i = 0;
+      const container = document.getElementById(`suvi-${channel}-container`);
+      const img = document.createElement('img');
+      img.alt = `SUVI ${channel}`;
+      img.loading = 'lazy';
+      // вставляємо img так, щоб fallback-text залишався поверх (він має position:absolute та z-index:2)
+      container.insertBefore(img, container.firstChild);
+      
+      setInterval(() => {
+        img.src = `https://services.swpc.noaa.gov${data[i].url}`;
+        i = (i + 1) % data.length;
+      }, 100); // Швидкість анімації 100ms на кадр (≈ 10 fps)
+    })
+    .catch(err => console.error(`Error loading SUVI ${channel}:`, err));
+});
 </script>
 </body>
 </html>
